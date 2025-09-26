@@ -3,28 +3,42 @@
 #include <cstring>
 #include <sys/types.h>      // system call data types (pid_t)
 #include <sys/wait.h>       // wait()
-#include <unistd.h>         // fork(), getpid(), getppid(), sleep(), getopt()
+#include <unistd.h>         // fork(), getpid(), getppid(), getopt()
 #include <sys/ipc.h>        // IPC_CREAT, IPC_RMID
-#include <sys.shm.h>        // shmget(), shmat(), shmdt(), shmctl()
+#include <sys/shm.h>        // shmget(), shmat(), shmdt(), shmctl()
 #include <signal.h>         // signal(), kill()
-#include <vector>           // std::vector
-#inlude <iomanip>           // std::setfill, std::setw
+#include <iomanip>          // std::setfill, std::setw
+
+#define MAX_PROCS 20        // Max number of worker processes
 
 // SIMULATED CLOCK
+struct SimClock {
+    unsigned int seconds;
+    unsigned int nanoseconds;
+};
 
+// PROCESS CONTROL BLOCK
+struct PCB {
+    int occupied;
+    pid_t pid;
+    unsigned int startSeconds;
+    unsigned int startNanoseconds;
+};
 
-// PROCESS TABLE
+volatile sig_atomic_t terminateFlag = 0; // Flag to indicate termination signal received
 
+void handle_sigint(int) { terminateFlag = 1; }
+void handle_sigalrm(int) { terminateFlag = 1; }
 
 int main(int argc, char* argv[]) {
-    int numberOfUsers = 5;      // Default number of users to launch
-    int simul = 2;              // Default max number of simultaneous users
-    float timeLimit = 3.0f;     // Default time limit for each user (seconds)
-    float interval = 0.1f;      // Default interval between launches (seconds)
-    int opt;                    // Option variable for getopt()
-}
-    // Parse cmd line options using getopt()
-    while ((opt = getopt(argc, argv, "hn:s:t:")) != -1) {
+    int numberOfUsers = 5;
+    int simul = 2;
+    float timeLimit = 3.0f;
+    float interval = 0.1f;
+    int opt;
+
+    // Parse command-line options using getopt()
+    while ((opt = getopt(argc, argv, "hn:s:t:i:")) != -1) {
         switch (opt) {
             case 'h':
                 std::cout << "Usage: " << argv[0] << " [-h] [-n proc] [-s simul] [-t timeLimit] [-i interval]\n";
@@ -53,54 +67,131 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // if numberOfUsers, simul, or iterations are not positive ints, print ERROR and EXIT
-    if (numberOfUsers <= 0 || simul <= 0 || timeLimit <= 0.0f || iterval <= 0.0f) {
-        std::cerr << "[ERROR] Input must be positive integers.\n";
+    if (numberOfUsers <= 0 || simul <= 0 || timeLimit <= 0.0f || interval <= 0.0f) {
+        std::cerr << "[ERROR] Input must be positive values.\n";
         return 1;
     }
 
+    std::cout << "OSS starting... PID: " << getpid() << ", PPID: " << getppid() << "\n";
+    std::cout << "Called with:\n";
+    std::cout << "-n: " << numberOfUsers << "\n";
+    std::cout << "-s: " << simul << "\n";
+    std::cout << "-t: " << timeLimit << "\n";
+    std::cout << "-i: " << interval << "\n";
 
-    // [running] = var to keep track of child processes currently running
+    // SIGNAL HANDLERS
+    signal(SIGINT, handle_sigint);
+    signal(SIGALRM, handle_sigalrm);
+    alarm(60);
+
+    // SHARED MEMORY
+    int shm_id = shmget(IPC_PRIVATE, sizeof(SimClock), IPC_CREAT | 0666);
+    if (shm_id < 0) {
+        std::cerr << "[ERROR] shmget failed." << std::endl;
+        return 1;
+    }
+    SimClock* clock = (SimClock*) shmat(shm_id, nullptr, 0);
+    if (clock == (void*) -1) {
+        std::cerr << "[ERROR] shmat failed." << std::endl;
+        shmctl(shm_id, IPC_RMID, nullptr);
+        return 1;
+    }
+    clock->seconds = 0;
+    clock->nanoseconds = 0;
+
+    // PROCESS TABLE
+    PCB processTable[MAX_PROCS] = {};
+
     int running = 0;
     // [launched] = var to keep track of total child processes launched
     int launched = 0;
+    unsigned int lastLaunchSec = 0;
+    unsigned int lastLaunchNano = 0;
+    unsigned int lastTablePrintSec = 0;
+    unsigned int lastTablePrintNano = 0;
 
+    // MAIN LOOP
+    while ((launched < numberOfUsers || running > 0) && !terminateFlag) {
+        // Increment clock 1 ms per loop iteration
+        clock->nanoseconds += 1000000;
+        if (clock->nanoseconds >= 1000000000) {
+            clock->seconds += 1;
+            clock->nanoseconds -= 1000000000;
+        }
 
-    // while loop continues so long as launched < numberOfUsers [-n]
-    while (launched < numberOfUsers) {
-        // verify number of currently running processes < allowed simultaneous processes
-        if (running < simul) {
-            pid_t pid = fork();                                     // Create new child process using fork()
-            // if fork() FAILS, print ERROR and EXIT
-            if (pid < 0) {
-                std::cerr << "[ERROR] Fork failed." << std::endl;
-                return EXIT_FAILURE;
-            } else if (pid == 0) {                                  // pid == 0 only true for child process
-                char arg[10];                                       // [arg] = char array to hold string version of [iterations] var
-                snprintf(arg, sizeof(arg), "%d", iterations);       // [snprintf()] = convert [iterations] int to string and store in [arg]
-                execlp("./user", "user", arg, nullptr);             // [execlp()] = replace child process with "user" program
-                std::cerr << "[ERROR] Exec failed." << std::endl;   // if [execlp()] fails, print ERROR and EXIT
-                exit(EXIT_FAILURE);
-            } else {
-            // Successful fork, increment running and launched counters
-                running++;
-                launched++;
+        // PRINT PROCESS TABLE every 0.5 simulated seconds
+        unsigned int elapsedNano = (clock->seconds - lastTablePrintSec) * 1000000000 + (clock->nanoseconds - lastTablePrintNano);
+        if (elapsedNano >= 500000000) {
+            std::cout << "OSS PID: " << getpid() << std::endl;
+            std::cout << "Seconds: " << clock->seconds << "\n";
+            std::cout << "Nanoseconds: " << clock->nanoseconds << "\n";
+            std::cout << "- - - Process Table - - -" << std::endl;
+            std::cout << "Entry | Occupied | PID | StartSeconds | StartNano" << std::endl;
+            for (int i = 0; i < MAX_PROCS; i++) {
+                std::cout << i << " " << processTable[i].occupied
+                          << " " << processTable[i].pid
+                          << " " << processTable[i].startSeconds
+                          << " " << processTable[i].startNanoseconds << std::endl;
             }
-        } else {
-            // If simul limit reached, wait for child process to finish
-            wait(nullptr);
-            // Decrement running counter so simul limit not exceeded
+            lastTablePrintSec = clock->seconds;
+            lastTablePrintNano = clock->nanoseconds;
+        }
+
+        // Check for terminated child processes
+        int status = 0;
+        pid_t pid;
+        while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
             running--;
+            for (int i = 0; i < MAX_PROCS; i++) {
+                if (processTable[i].occupied && processTable[i].pid == pid) {
+                    processTable[i].occupied = 0;
+                    break;
+                }
+            }
+        }
+
+        // Launch new child processes if under limit
+        if (launched < numberOfUsers && running < simul) {
+            unsigned int sinceLastLaunch = (clock->seconds - lastLaunchSec) * 1000000000 + (clock->nanoseconds - lastLaunchNano);
+            if (sinceLastLaunch >= (unsigned int)(interval * 1e9)) {
+                int pcbIndex = -1;
+                for (int i = 0; i < MAX_PROCS; ++i) {
+                    if (!processTable[i].occupied) {
+                        pcbIndex = i;
+                        break;
+                    }
+                }
+                if (pcbIndex != -1) {
+                    pid_t cpid = fork();
+                    if (cpid == 0) {
+                        // Child: Execute worker process with timeLimit arg as seconds/nanoseconds and shm_id
+                        int tSec = (int)timeLimit;
+                        int tNano = (int)((timeLimit - tSec) * 1e9);
+                        char secArg[16], nanoArg[16], shmIdArg[16];
+                        snprintf(secArg, sizeof(secArg), "%d", tSec);
+                        snprintf(nanoArg, sizeof(nanoArg), "%d", tNano);
+                        snprintf(shmIdArg, sizeof(shmIdArg), "%d", shm_id);
+                        execlp("./worker", "worker", secArg, nanoArg, shmIdArg, nullptr);
+                    } else {
+                        processTable[pcbIndex].occupied = 1;
+                        processTable[pcbIndex].pid = cpid;
+                        processTable[pcbIndex].startSeconds = clock->seconds;
+                        processTable[pcbIndex].startNanoseconds = clock->nanoseconds;
+                        running++;
+                        launched++;
+                        lastLaunchSec = clock->seconds;
+                        lastLaunchNano = clock->nanoseconds;
+                    }
+                }
+            }
         }
     }
 
-    // Wait for remaining child processes to finish before exiting
-    while (running > 0) {
-        wait(nullptr);
-        running--;
-    }
+    // CLEANUP
+    shmdt(clock);
+    shmctl(shm_id, IPC_RMID, nullptr);
 
-    // Print total number of children launched
-    std::cout << "Launched: " << numberOfUsers << " children." << std::endl;
-    return EXIT_SUCCESS;
+    std::cout << "OSS PID: " << getpid() << " terminating..." << "\n";
+    std::cout << "Total workers launched: " << launched << "\n";
+    return 0;
 }
