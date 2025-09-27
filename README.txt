@@ -8,7 +8,8 @@ Version Control: GitHub https://github.com/kor1andr/Project-2
     - Help me draft a bare-bones starting template for implementing shared memory based on the following requirements.
     - What formula can I use to handle nanosecond overflow?
     - Why am I receiving the following message sometimes in the output? "[WORKER] shmat failed"
-    - 
+    - Why is my periodic output printing the same time for current and termination time?
+    - Why is some oss output interrupting worker output in testing?
 [Summary]
     Found to be very useful, unfortunately... I'm not a fan of the increasing over-reliance on generative AI and
     do not feel it should be a used as a replacement, as it so often is pushed to be in professional settings--but
@@ -18,7 +19,7 @@ Version Control: GitHub https://github.com/kor1andr/Project-2
 [How to Compile]
     - In the terminal, type "make"
 [How to Run]
-    1) Run the main program 'oss' with default parameters: ./ oss
+    1) Run the main program 'oss' with default parameters: ./oss
         - This will launch 5 workers, up to 2 at a time, each for 3 econds, with 0.1 seconds between launches.
         - OR -
     2) Type "-h" for detailed instructions/help.

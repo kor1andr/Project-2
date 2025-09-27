@@ -77,12 +77,12 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::cout << "OSS starting... PID: " << getpid() << ", PPID: " << getppid() << "\n";
-    std::cout << "Called with:\n";
-    std::cout << "-n: " << numberOfUsers << "\n";
-    std::cout << "-s: " << simul << "\n";
-    std::cout << "-t: " << timeLimit << "\n";
-    std::cout << "-i: " << interval << "\n";
+    std::cout << "OSS starting... PID: " << getpid() << ", PPID: " << getppid() << std::endl;
+    std::cout << "Called with:" << std::endl;
+    std::cout << "-n: " << numberOfUsers << std::endl;
+    std::cout << "-s: " << simul << std::endl;
+    std::cout << "-t: " << timeLimit << std::endl;
+    std::cout << "-i: " << interval << std::endl;
 
     // SIGNAL HANDLERS
     signal(SIGINT, handle_sigint);
@@ -145,15 +145,17 @@ int main(int argc, char* argv[]) {
         unsigned int elapsedNano = (clock->seconds - lastTablePrintSec) * 1000000000 + (clock->nanoseconds - lastTablePrintNano);
         if (elapsedNano >= 500000000) {
             std::cout << "OSS PID: " << getpid() << std::endl;
-            std::cout << "Seconds: " << clock->seconds << "\n";
-            std::cout << "Nanoseconds: " << clock->nanoseconds << "\n";
+            std::cout << "Seconds: " << clock->seconds << std::endl;
+            std::cout << "Nanoseconds: " << clock->nanoseconds << std::endl;
             std::cout << "- - - Process Table - - -" << std::endl;
             std::cout << "Entry | Occupied | PID | StartSeconds | StartNano" << std::endl;
             for (int i = 0; i < MAX_PROCS; i++) {
-                std::cout << i << " " << processTable[i].occupied
-                          << " " << processTable[i].pid
-                          << " " << processTable[i].startSeconds
-                          << " " << processTable[i].startNanoseconds << std::endl;
+                std::cout << i << " | "
+                          << processTable[i].occupied << " | "
+                          << processTable[i].pid << " | "
+                          << processTable[i].startSeconds << " | "
+                          << processTable[i].startNanoseconds << " | "
+                          << std::endl;
             }
             // Update last print time to current clock time
             lastTablePrintSec = clock->seconds;
@@ -237,10 +239,10 @@ int main(int argc, char* argv[]) {
     shmdt(clock);
     shmctl(shm_id, IPC_RMID, nullptr);
 
-    std::cout << "OSS PID: " << getpid() << " Terminating" << "\n";
-    std::cout << launched << " workers were launched and terminated\n";
+    std::cout << "OSS PID: " << getpid() << " Terminating" << std::endl;
+    std::cout << launched << " workers were launched and terminated." << std::endl;
     std::cout << "Workers ran for a combined time of " << totalWorkerSeconds << " seconds "
-              << totalWorkerNanoseconds << " nanoseconds.\n";
+              << totalWorkerNanoseconds << " nanoseconds." << std::endl;
 
     return 0;
 }
