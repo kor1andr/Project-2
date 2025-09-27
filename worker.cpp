@@ -50,10 +50,9 @@ int main(int argc, char* argv[]) {
 
     // Print startup info (PID, PPID, system clock, term time)
     std::cout << "Worker PID: " << pid << ", PPID: " << ppid << std::endl;
-    std::cout << "Interval: " << intervalSec << " seconds, " << intervalNano << " nanoseconds" << std::endl;
-    std::cout << "Start Time: " << startSec << " seconds, " << startNano << " nanoseconds" << std::endl;
-    std::cout << "Termination Time: " << termSec << " seconds, " << termNano << " nanoseconds" << std::endl;
-    std::cout << "- Starting..." << std::endl;
+    std::cout << "SysClockS: " << startSec << " SysClockNano: " << startNano << std::endl;
+    std::cout << "TermTimeS: " << termSec << " TermTimeNano: " << termNano << std::endl;
+    std::cout << "--Just Starting" << std::endl;
     std::cout << "----------------------------------------" << std::endl;
 
     int lastPrintedSec = startSec;
@@ -66,8 +65,8 @@ int main(int argc, char* argv[]) {
     if (currentSec > termSec || (currentSec == termSec && currentNano >= termNano)) {
         std::cout << "Worker PID: " << pid << " PPID: " << ppid << std::endl;
         std::cout << "SysClockS: " << currentSec << " SysClockNano: " << currentNano << std::endl;
-        std::cout << "TermTimeS:: " << termSec << " TermTimeNano: " << termNano << std::endl;
-        std::cout << "-- Terminating..." << std::endl;
+        std::cout << "TermTimeS: " << termSec << " TermTimeNano: " << termNano << std::endl;
+        std::cout << "--Terminating..." << std::endl;
         std::cout << "----------------------------------------" << std::endl;
         break;
     }
@@ -77,7 +76,7 @@ int main(int argc, char* argv[]) {
         std::cout << "Worker PID: " << pid << " PPID: " << ppid << std::endl;
         std::cout << "SysClockS: " << currentSec << " SysClockNano:" << currentNano << std::endl;
         std::cout << "TermTimeS: " << termSec << " TermTimeNano: " << termNano << std::endl;
-        std::cout << "-- " << (currentSec - startSec) << " seconds have passed since starting." << std::endl;
+        std::cout << "--" << (currentSec - startSec) << " seconds have passed since starting." << std::endl;
         lastPrintedSec = currentSec;
     }
     // NO SLEEP

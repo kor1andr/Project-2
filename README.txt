@@ -9,7 +9,6 @@ Version Control: GitHub https://github.com/kor1andr/Project-2
     - What formula can I use to handle nanosecond overflow?
     - Why am I receiving the following message sometimes in the output? "[WORKER] shmat failed"
     - Why is my periodic output printing the same time for current and termination time?
-    - Why is some oss output interrupting worker output in testing?
 [Summary]
     Found to be very useful, unfortunately... I'm not a fan of the increasing over-reliance on generative AI and
     do not feel it should be a used as a replacement, as it so often is pushed to be in professional settings--but
