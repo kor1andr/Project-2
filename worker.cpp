@@ -25,6 +25,11 @@ int main(int argc, char* argv[]) {
     pid_t pid = getpid();
     pid_t ppid = getppid();
 
+    // Print startup info with args
+    std::cout << "Worker starting, PID: " << pid << ", PPID: " << ppid << std::endl;
+    std::cout << "Called with:" << std::endl;
+    std::cout << "Interval: " << intervalSec << " seconds, " << intervalNano << " nanoseconds" << std::endl;
+
     // [shmat] = attach shm_id to worker's address space [nullptr]
         // cast result to int* to access shared memory as an array of 2 ints
     int* clock = (int*)shmat(shm_id, nullptr, 0);
@@ -49,7 +54,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Print startup info (PID, PPID, system clock, term time)
-    std::cout << "Worker PID: " << pid << ", PPID: " << ppid << std::endl;
+    std::cout << "WORKER PID: " << pid << ", PPID: " << ppid << std::endl;
     std::cout << "SysClockS: " << startSec << " SysClockNano: " << startNano << std::endl;
     std::cout << "TermTimeS: " << termSec << " TermTimeNano: " << termNano << std::endl;
     std::cout << "--Just Starting" << std::endl;
@@ -63,7 +68,7 @@ int main(int argc, char* argv[]) {
 
     // Check if termination time reached
     if (currentSec > termSec || (currentSec == termSec && currentNano >= termNano)) {
-        std::cout << "Worker PID: " << pid << " PPID: " << ppid << std::endl;
+        std::cout << "WORKER PID: " << pid << " PPID: " << ppid << std::endl;
         std::cout << "SysClockS: " << currentSec << " SysClockNano: " << currentNano << std::endl;
         std::cout << "TermTimeS: " << termSec << " TermTimeNano: " << termNano << std::endl;
         std::cout << "--Terminating..." << std::endl;
@@ -73,7 +78,7 @@ int main(int argc, char* argv[]) {
 
     // Periodic output (every second)
     if (currentSec > lastPrintedSec) {
-        std::cout << "Worker PID: " << pid << " PPID: " << ppid << std::endl;
+        std::cout << "WORKER PID: " << pid << " PPID: " << ppid << std::endl;
         std::cout << "SysClockS: " << currentSec << " SysClockNano:" << currentNano << std::endl;
         std::cout << "TermTimeS: " << termSec << " TermTimeNano: " << termNano << std::endl;
         std::cout << "--" << (currentSec - startSec) << " seconds have passed since starting." << std::endl;
