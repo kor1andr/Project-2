@@ -29,8 +29,10 @@ int main(int argc, char* argv[]) {
         // cast result to int* to access shared memory as an array of 2 ints
     int* clock = (int*)shmat(shm_id, nullptr, 0);
     // If shmat() fails, print error and exit ***
+    if (clock == (void*) -1) {
         std::cerr << "[WORKER] shmat failed.\n";
         return 1;
+    }
 
     // Retrieve initial simulate clock values from shared memory
         // [clock[0]] = seconds, [clock[1]] = nanoseconds, records start time

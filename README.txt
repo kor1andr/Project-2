@@ -7,7 +7,7 @@ Version Control: GitHub https://github.com/kor1andr/Project-2
     [Prompts]
     - Help me draft a bare-bones starting template for implementing shared memory based on the following requirements.
     - What formula can I use to handle nanosecond overflow?
-    - 
+    - Why am I receiving the following message sometimes in the output? "[WORKER] shmat failed"
     - 
 [Summary]
     Found to be very useful, unfortunately... I'm not a fan of the increasing over-reliance on generative AI and
