@@ -10,6 +10,6 @@ worker:	worker.cpp
 	$(CXX)	$(CXXFLAGS)	-o	worker	worker.cpp
 
 clean:
-	rm	-f	oss user
+	rm	-f	oss	user
 
 .PHONY:	all	clean

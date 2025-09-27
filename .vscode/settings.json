@@ -1,4 +1,5 @@
 {
+    "editor.renderControlCharacters": true,
     "files.associations": {
         "atomic": "cpp",
         "bit": "cpp",
